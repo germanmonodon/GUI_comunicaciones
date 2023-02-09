@@ -22,20 +22,27 @@ class MainWindow:
         self.root.mainloop()
 
     def connect_ROVs(self):
-        nueva_ventana = SecondWindow()
-class SecondWindow(Toplevel):
-    def __init__(self):
-        super().__init__()
-        self.wm_iconbitmap(os.path.dirname(os.path.abspath(__file__)) + "\Imagenes\monodon_logo.ico")
-        self.title("Interfaz de comunicación")
-        self.boton_cerrar = Button(
-            self,
-            text="Cerrar ventana",
-            command=self.destroy
-        )
-        self.boton_cerrar.place(x=75, y=75)
-        self.focus()
-        self.grab_set()
+        nueva_ventana = SecondWindow(self.root)
+
+
+class SecondWindow:
+    def __init__(self, master):
+        self.frameROVs = Toplevel(master)
+        self.frameROVs.wm_iconbitmap(os.path.dirname(os.path.abspath(__file__)) + "\Imagenes\monodon_logo.ico")
+        self.frameROVs.title("Interfaz de comunicación")
+        self.frameROVs.geometry("1000x700")
+        Label(self.frameROVs,
+              text="Master ROV").place(x=250, y=50)
+        Label(self.frameROVs,
+              text="Slave ROV").place(x=750, y=50)
+        #self.boton_cerrar = Button(
+        #    self,
+         #   text="Cerrar ventana",
+          #  command=self.destroy
+        #)
+        #self.boton_cerrar.place(x=75, y=75)
+        #self.focus()
+        # self.grab_set()
 
 
 
