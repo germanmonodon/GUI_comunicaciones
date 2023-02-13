@@ -1,5 +1,10 @@
 He modificado la librería tkial por si después eso te da problemas
 
+ERRORES:
+
+No puedes escribiri por los hilos en el cuadrado de save PDF
+La captura de la imagen se te hace mal, tienes que mirar como arreglar eso.
+
 IDEAS:
 
 - Puedes poner un dibujo de la orientacion de los ROVs

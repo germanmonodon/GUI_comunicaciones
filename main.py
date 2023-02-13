@@ -8,6 +8,8 @@ from tkdial import Meter
 from fpdf import FPDF
 import numpy as np
 from PIL import ImageGrab
+import time
+import threading
 import os
 
 
@@ -22,7 +24,7 @@ class MainWindow:
 
         # Habría que redimensionar la imagen para que no ocupe tanto, ya sea mediante código o directamente
 
-        img = ImageTk.PhotoImage(Image.open("Imagenes\monodon_background.png"))
+        img = ImageTk.PhotoImage(Image.open(os.path.dirname(os.path.abspath(__file__))+"\Imagenes\monodon_background.png"))
         label = Label(self.root, image=img)
         label.grid(row=0, column=0)
 
@@ -60,13 +62,16 @@ class Table:
 
 class ThirdWindow:
     def __init__(self, master):
+        self.angle = 0
+        self.begin = True
         self.frame_data = Toplevel(master)
         self.frame_data.wm_iconbitmap(os.path.dirname(os.path.abspath(__file__)) + "\Imagenes\monodon_logo.ico")
         self.frame_data.title("Data")
-        self.frame_data.geometry("1400x600")
+        self.frame_data.geometry("1300x600")
         self.pdf_name = "NA"
         self.text_in_label = StringVar()
-        self.text_in_label.set("Enter pdf name to save results")
+        self.entry_text = StringVar()
+        self.text_in_label.set("Enter pdf name to save results and stop running")
         Label(self.frame_data, text="Pressure received").place(x=30, y=10)
         Label(self.frame_data, text="Accelerometer data").place(x=900, y=10)
         Label(self.frame_data, text="Number of samples: 80").place(x=900, y=400)
@@ -87,9 +92,14 @@ class ThirdWindow:
         self.pdf_name_entry = Entry(self.frame_data)
         self.pdf_name_entry.place(x=200, y=470)
         self.button_pdf_download.place(x=40, y=500)
-        self.plot_pressure()
-        self.plot_imu()
-        self.show_acc()
+        self.x = threading.Thread(target=self.show_acc)
+        self.x.start()
+        self.y = threading.Thread(target=self.plot_imu)
+        self.y.start()
+        self.z = threading.Thread(target=self.plot_pressure)
+        self.z.start()
+        #self.plot_imu()
+        #self.show_acc()
 
     def getter(self, widget):
         x = self.frame_data.winfo_rootx() + widget.winfo_x()
@@ -113,13 +123,10 @@ class ThirdWindow:
                  ln=1, align='C')
 
         self.getter(self.canvas_acc.get_tk_widget())
-        pdf.set_font("Arial", size=10)
-        pdf.write(10, '1. Accelerometer data of the ROV')
+        pdf.text(x=20, y=40, txt="ROV acceleration")
         pdf.image(r"C:\Users\Innovacion\Desktop\Proyectos_Coding\GUI_comunicaciones\temp.png",
                   x=30, y=40, w=100, h=100)
 
-
-        # save the pdf with name .pdf
         if self.pdf_name == "":
             self.text_in_label.set("Set a name for the pdf")
         else:
@@ -127,66 +134,77 @@ class ThirdWindow:
             pdf.output(os.path.dirname(os.path.abspath(__file__)) + "\Informes\Monodon_" + self.pdf_name + ".pdf")
 
     def show_acc(self):
-        fig = Figure(figsize=(5, 5),
-                     dpi=70)
+        while True:
+            fig = Figure(figsize=(5, 5),
+                         dpi=70)
 
-        # random data
+            # random data
 
-        x_acc = np.random.randint(1,101,80)
-        y_acc = np.random.randint(1, 101, 80)
-        z_acc = np.random.randint(1, 101, 80)
+            x_acc = np.random.randint(1,101,80)
+            y_acc = np.random.randint(1, 101, 80)
+            z_acc = np.random.randint(1, 101, 80)
 
-        # adding the subplot
-        plot1 = fig.add_subplot(111)
+            # adding the subplot
+            plot1 = fig.add_subplot(111)
 
-        # plotting the graph
-        plot1.plot(x_acc, color="blue")
-        plot1.plot(y_acc, color="red")
-        plot1.plot(z_acc, color="yellow")
-        plot1.set_xlabel('Time (s)')
-        plot1.set_ylabel('Acceleration (g)')
+            # plotting the graph
+            plot1.plot(x_acc, color="blue")
+            plot1.plot(y_acc, color="red")
+            plot1.plot(z_acc, color="yellow")
+            plot1.set_xlabel('Time (s)')
+            plot1.set_ylabel('Acceleration (g)')
 
-        # creating the Tkinter canvas
-        # containing the Matplotlib figure
-        self.canvas_acc = FigureCanvasTkAgg(fig,
-                                   master=self.frame_data)
-        self.canvas_acc.draw()
+            # creating the Tkinter canvas
+            # containing the Matplotlib figure
+            self.canvas_acc = FigureCanvasTkAgg(fig,
+                                       master=self.frame_data)
+            self.canvas_acc.draw()
 
-        # placing the canvas on the Tkinter window
-        self.canvas_acc.get_tk_widget().place(x=900, y=40)
+            # placing the canvas on the Tkinter window
+            self.canvas_acc.get_tk_widget().place(x=900, y=40)
+            time.sleep(0.01)
 
     def plot_imu(self):
-
-        meter3 = Meter(self.frame_data, bg="#242424", fg="#242424", radius=320, start=0, end=360,
-                       major_divisions=90, border_width=0, text_color="white",
-                       start_angle=0, end_angle=-360, scale_color="white", axis_color="cyan",
-                       needle_color="white", scroll_steps=60, minor_divisions=10, scroll=False)
-        meter3.set(15)
-        meter3.place(x=500, y=60)
+        if self.begin:
+            self.begin = False
+            self.meter3 = Meter(self.frame_data, bg="#242424", fg="#242424", radius=320, start=0, end=360,
+                           major_divisions=90, border_width=0, text_color="white",
+                           start_angle=0, end_angle=-360, scale_color="white", axis_color="cyan",
+                           needle_color="white", scroll_steps=60, minor_divisions=10, scroll=False)
+            self.meter3.set(15)
+            self.meter3.place(x=500, y=60)
+        else:
+            print("Calculating angle....")
+        while True:
+            self.angle = self.angle + 1
+            self.meter3.set(self.angle)
+            time.sleep(0.4)
 
     def plot_pressure(self):
-        fig = Figure(figsize=(5, 5),
-                     dpi=70)
+        while True:
+            fig = Figure(figsize=(5, 5),
+                         dpi=70)
 
-        # list of squares
-        y = [i ** 2 for i in range(101)]
+            # list of squares
+            y = np.random.randint(0, 300, size=100)
 
-        # adding the subplot
-        plot1 = fig.add_subplot(111)
+            # adding the subplot
+            plot1 = fig.add_subplot(111)
 
-        # plotting the graph
-        plot1.plot(y)
-        plot1.set_xlabel('Time (s)')
-        plot1.set_ylabel('Pressure (Pa)')
+            # plotting the graph
+            plot1.plot(y)
+            plot1.set_xlabel('Time (s)')
+            plot1.set_ylabel('Pressure (Pa)')
 
-        # creating the Tkinter canvas
-        # containing the Matplotlib figure
-        canvas = FigureCanvasTkAgg(fig,
-                                   master=self.frame_data)
-        canvas.draw()
+            # creating the Tkinter canvas
+            # containing the Matplotlib figure
+            canvas = FigureCanvasTkAgg(fig,
+                                       master=self.frame_data)
+            canvas.draw()
 
-        # placing the canvas on the Tkinter window
-        canvas.get_tk_widget().place(x=40, y=40)
+            # placing the canvas on the Tkinter window
+            canvas.get_tk_widget().place(x=40, y=40)
+            time.sleep(0.4)
 
 
 class SecondWindow:
