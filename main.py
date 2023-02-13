@@ -39,12 +39,31 @@ class MainWindow:
         logger_window = ThirdWindow(self.root)
 
 
+class Table:
+
+    def __init__(self, root):
+
+        # code for creating table
+        lst = [('Packets transmitted', 4, 'Date last packet', '13/02/20223'),
+               ('Mean delay', '1,3 s', 'Max delay', '2 s'),
+               ('Mean of losses/s', 3, 'Max losed/s', 5)]
+        total_rows = len(lst)
+        total_columns = len(lst[0])
+        for i in range(total_rows):
+            for j in range(total_columns):
+                self.e = Entry(root, width=20, fg='blue',
+                               font=('Arial', 10, 'bold'))
+
+                self.e.grid(row=i, column=j)
+                self.e.insert(END, lst[i][j])
+
+
 class ThirdWindow:
     def __init__(self, master):
         self.frame_data = Toplevel(master)
         self.frame_data.wm_iconbitmap(os.path.dirname(os.path.abspath(__file__)) + "\Imagenes\monodon_logo.ico")
         self.frame_data.title("Data")
-        self.frame_data.geometry("1700x700")
+        self.frame_data.geometry("1400x600")
         self.pdf_name = "NA"
         self.text_in_label = StringVar()
         self.text_in_label.set("Enter pdf name to save results")
@@ -58,6 +77,9 @@ class ThirdWindow:
         Label(self.frame_data, text="Timestamp last message : 10/02/2023 12:01").place(x=30, y=400)
         Label(self.frame_data, text="Pressure received : 1002 Pa").place(x=30, y=420)
         Label(self.frame_data, text="Estimated depth: 2 meters").place(x=30, y=440)
+        self.frame_table = LabelFrame(self.frame_data, text="Coms statistics")
+        self.frame_table.place(x=550, y=470)
+        self.coms_table = Table(self.frame_table)
         self.pdf_text = Label(self.frame_data, textvariable=self.text_in_label)
         self.pdf_text.place(x=30, y=470)
         self.image_pdf = ImageTk.PhotoImage(Image.open(r"C:\Users\Innovacion\Desktop\Proyectos_Coding\GUI_comunicaciones\Imagenes\pdf_download.jpg"))
@@ -102,7 +124,7 @@ class ThirdWindow:
             self.text_in_label.set("Set a name for the pdf")
         else:
             self.text_in_label.set("PDF saved correctly")
-            pdf.output(self.pdf_name + ".pdf")
+            pdf.output(os.path.dirname(os.path.abspath(__file__)) + "\Informes\Monodon_" + self.pdf_name + ".pdf")
 
     def show_acc(self):
         fig = Figure(figsize=(5, 5),
