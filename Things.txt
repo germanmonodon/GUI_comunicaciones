@@ -1,0 +1,6 @@
+He modificado la librería tkial por si después eso te da problemas
+
+IDEAS:
+
+- Puedes poner un dibujo de la orientacion de los ROVs
+- Una descarga de documento logger de comunicaciones en el que ponga los paquetes perdidos y lo que veas de delays y demás
