@@ -11,6 +11,8 @@ from PIL import ImageGrab
 import time
 import threading
 import os
+import datetime
+
 
 
 class MainWindow:
@@ -38,13 +40,15 @@ class MainWindow:
         nueva_ventana = SecondWindow(self.root)
 
     def logger(self):
-        logger_window = ThirdWindow(self.root)
+        self.logger_window = ThirdWindow(self.root)
+        self.image_pdf = ImageTk.PhotoImage(Image.open(r"C:\Users\Innovacion\Desktop\Proyectos_Coding\GUI_comunicaciones\Imagenes\pdf_download.jpg"))
+        self.button_pdf_download = Button(height=70, width=200, command=self.button_pdf, image=self.image_pdf)
 
+    def button_pdf(self):
+        self.logger_window.button_pdf_download()
 
 class Table:
-
     def __init__(self, root):
-
         # code for creating table
         lst = [('Packets transmitted', 4, 'Date last packet', '13/02/20223'),
                ('Mean delay', '1,3 s', 'Max delay', '2 s'),
@@ -85,12 +89,8 @@ class ThirdWindow:
         self.frame_table = LabelFrame(self.frame_data, text="Coms statistics")
         self.frame_table.place(x=550, y=470)
         self.coms_table = Table(self.frame_table)
-        self.pdf_text = Label(self.frame_data, textvariable=self.text_in_label)
-        self.pdf_text.place(x=30, y=470)
         self.image_pdf = ImageTk.PhotoImage(Image.open(r"C:\Users\Innovacion\Desktop\Proyectos_Coding\GUI_comunicaciones\Imagenes\pdf_download.jpg"))
         self.button_pdf_download = Button(self.frame_data, height=70, width=200, command=self.button_pdf_download, image=self.image_pdf)
-        self.pdf_name_entry = Entry(self.frame_data)
-        self.pdf_name_entry.place(x=200, y=470)
         self.button_pdf_download.place(x=40, y=500)
         self.x = threading.Thread(target=self.show_acc)
         self.x.start()
@@ -98,40 +98,45 @@ class ThirdWindow:
         self.y.start()
         self.z = threading.Thread(target=self.plot_pressure)
         self.z.start()
-        #self.plot_imu()
-        #self.show_acc()
 
-    def getter(self, widget):
+    def getter(self, widget, name_widget):
         x = self.frame_data.winfo_rootx() + widget.winfo_x()
         y = self.frame_data.winfo_rooty() + widget.winfo_y()
         x1 = x + widget.winfo_width()
         y1 = y + widget.winfo_height()
-        ImageGrab.grab().crop((x, y, x1, y1)).save("temp.png")
+        ImageGrab.grab().crop((x, y, x1, y1)).save(name_widget)
 
     def button_pdf_download(self):
         pdf = FPDF()
-        self.pdf_name = self.pdf_name_entry.get()
         # Add a page
         pdf.add_page()
-
+        # Falta buscar en el direectorio los nombres que tienes y yo lo que haría sería darle la fecha del experimento y al carajo
         # set style and size of font
         # that you want in the pdf
+        self.pdf_name = str(datetime.datetime.now())
+        self.pdf_name = self.pdf_name.split(".")[0]
+        self.pdf_name_2 = self.pdf_name.replace(":", "_")
+
+        # ts store timestamp of current time
+
         pdf.set_font("Arial", size=15)
         pdf.image(r"C:\Users\Innovacion\Desktop\Proyectos_Coding\GUI_comunicaciones\Imagenes\header_monodon.jpg", x=5, y=5, w=10, h=10)
         # create a cell
-        pdf.cell(200, 10, txt="Report Data for experiment " + self.pdf_name,
+        pdf.cell(200, 10, txt="Report Data for experiment done at " + self.pdf_name,
                  ln=1, align='C')
 
-        self.getter(self.canvas_acc.get_tk_widget())
+        #self.getter(self.canvas_acc.get_tk_widget())
         pdf.text(x=20, y=40, txt="ROV acceleration")
-        pdf.image(r"C:\Users\Innovacion\Desktop\Proyectos_Coding\GUI_comunicaciones\temp.png",
+        pdf.image(r"C:\Users\Innovacion\Desktop\Proyectos_Coding\GUI_comunicaciones\acc.png",
                   x=30, y=40, w=100, h=100)
-
+        pdf.text(x=20, y=150, txt="Historic of pressure")
+        pdf.image(r"C:\Users\Innovacion\Desktop\Proyectos_Coding\GUI_comunicaciones\pressure.png",
+                  x=30, y=160, w=100, h=100)
         if self.pdf_name == "":
             self.text_in_label.set("Set a name for the pdf")
         else:
             self.text_in_label.set("PDF saved correctly")
-            pdf.output(os.path.dirname(os.path.abspath(__file__)) + "\Informes\Monodon_" + self.pdf_name + ".pdf")
+            pdf.output(os.path.dirname(os.path.abspath(__file__)) + "\Informes\Monodon_" + self.pdf_name_2 + ".pdf")
 
     def show_acc(self):
         while True:
@@ -162,6 +167,7 @@ class ThirdWindow:
 
             # placing the canvas on the Tkinter window
             self.canvas_acc.get_tk_widget().place(x=900, y=40)
+            self.getter(self.canvas_acc.get_tk_widget(), "acc.png")
             time.sleep(0.01)
 
     def plot_imu(self):
@@ -198,12 +204,13 @@ class ThirdWindow:
 
             # creating the Tkinter canvas
             # containing the Matplotlib figure
-            canvas = FigureCanvasTkAgg(fig,
+            self.canvas_press = FigureCanvasTkAgg(fig,
                                        master=self.frame_data)
-            canvas.draw()
+            self.canvas_press.draw()
 
             # placing the canvas on the Tkinter window
-            canvas.get_tk_widget().place(x=40, y=40)
+            self.canvas_press.get_tk_widget().place(x=40, y=40)
+            self.getter(self.canvas_press.get_tk_widget(), "pressure.png")
             time.sleep(0.4)
 
 
