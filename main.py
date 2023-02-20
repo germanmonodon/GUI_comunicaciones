@@ -74,6 +74,11 @@ class ThirdWindow:
         self.pdf_name = "NA"
         self.pdf_name_2 = "NA"
         self.text_pdf = StringVar()
+        self.text_pressure_received = StringVar()
+        self.text_number_samples = StringVar()
+        self.text_timestamp = StringVar()
+        self.text_timestamp2 = StringVar()
+
         self.text_pdf.set("Save Report!")
 
         # Principal Frame configuration
@@ -86,13 +91,13 @@ class ThirdWindow:
         # Labels configuration
         Label(self.frame_data, text="Pressure received").place(x=30, y=10)
         Label(self.frame_data, text="Accelerometer data").place(x=900, y=10)
-        Label(self.frame_data, text="Number of samples: 80").place(x=900, y=400)
+        Label(self.frame_data, textvariable=self.text_number_samples).place(x=900, y=400)
         Label(self.frame_data, text="Orientation ROV2").place(x=500, y=10)
-        Label(self.frame_data, text="Timestamp last message : 13/02/2023 10:34").place(x=500, y=400)
+        Label(self.frame_data, textvariable=self.text_timestamp).place(x=500, y=400)
         Label(self.frame_data, text="Acc data: ").place(x=500, y=420)
         Label(self.frame_data, text="Gyro data:").place(x=500, y=440)
-        Label(self.frame_data, text="Timestamp last message : 10/02/2023 12:01").place(x=30, y=400)
-        Label(self.frame_data, text="Pressure received : 1002 Pa").place(x=30, y=420)
+        Label(self.frame_data, textvariable=self.text_timestamp2).place(x=30, y=400)
+        Label(self.frame_data, textvariable=self.text_pressure_received).place(x=30, y=420)
         Label(self.frame_data, text="Estimated depth: 2 meters").place(x=30, y=440)
         Label(self.frame_data, textvariable=self.text_pdf).place(x=110, y=510)
         self.frame_table = LabelFrame(self.frame_data, text="Coms statistics")
@@ -154,13 +159,14 @@ class ThirdWindow:
 
         fig = Figure(figsize=(5, 5),
                      dpi=70)
+        self.text_timestamp.set("Timestamp last message " + str(datetime.datetime.now()).split(".")[0])
 
         self.roll_list.append(acc[0])
         self.yaw_list.append(acc[1])
         self.pitch_list.append(acc[2])
         # adding the subplot
         plot1 = fig.add_subplot(111)
-
+        self.text_number_samples.set("Number of samples: " + str(len(self.roll_list)))
         # plotting the graph
         plot1.plot(self.roll_list, color="blue")
         plot1.plot(self.yaw_list, color="red")
@@ -194,9 +200,8 @@ class ThirdWindow:
             fig = Figure(figsize=(5, 5),
                          dpi=70)
 
-            # list of squares
-
-
+            self.text_pressure_received.set("Presure received: " + str("{:.2f}".format(msg)) + " Pa")
+            self.text_timestamp2.set("Timestamp last message " + str(datetime.datetime.now()).split(".")[0])
             # adding the subplot
             self.pressure_list.append(msg)
             plot1 = fig.add_subplot(111)
