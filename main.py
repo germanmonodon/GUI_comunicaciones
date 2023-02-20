@@ -6,6 +6,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkdial import Meter
 from fpdf import FPDF
 from PIL import ImageGrab
+from pubsub import pub
+from auxiliar import Receiver
 
 import time
 import threading
@@ -14,17 +16,17 @@ import os
 import datetime
 
 
+
 class MainWindow:
     def __init__(self):
-
         self.root = Tk()  # create a root widget
         self.root.title("Communication system")
         self.root.geometry("1000x700")
-        self.root.wm_iconbitmap(os.path.dirname(os.path.abspath(__file__))
-                                +"\Imagenes\monodon_logo.ico")
+        self.root.wm_iconbitmap(os.path.dirname(os.getcwd())
+                                + "\GUI_comunicaciones\Imagenes\monodon_logo.ico")
 
-        img = ImageTk.PhotoImage(Image.open(os.path.dirname(os.path.abspath(__file__))
-                                            + "\Imagenes\monodon_background.png"))
+        img = ImageTk.PhotoImage(Image.open(os.path.dirname(os.getcwd())
+                                            + "\GUI_comunicaciones\Imagenes\monodon_background.png"))
         label = Label(self.root, image=img)
         label.grid(row=0, column=0)
 
@@ -42,8 +44,6 @@ class MainWindow:
 
     def logger(self):
         self.logger_window = ThirdWindow(self.root)
-        self.image_pdf = ImageTk.PhotoImage(Image.open(r"C:\Users\Innovacion\Desktop\Proyectos_Coding\GUI_comunicaciones\Imagenes\pdf_download.jpg"))
-        self.button_pdf_download = Button(height=70, width=200, command=self.button_pdf, image=self.image_pdf)
 
     def button_pdf(self):
         self.logger_window.button_pdf_download()
@@ -73,12 +73,15 @@ class ThirdWindow:
         self.begin = True
         self.pdf_name = "NA"
         self.pdf_name_2 = "NA"
+        self.text_pdf = StringVar()
+        self.text_pdf.set("Save Report!")
 
         # Principal Frame configuration
         self.frame_data = Toplevel(master)
-        self.frame_data.wm_iconbitmap(os.path.dirname(os.path.abspath(__file__)) + "\Imagenes\monodon_logo.ico")
+        self.frame_data.wm_iconbitmap(os.path.dirname(os.getcwd())
+                                +"\GUI_comunicaciones\Imagenes\monodon_logo.ico")
         self.frame_data.title("Data")
-        self.frame_data.geometry("1300x600")
+        self.frame_data.geometry("1300x570")
 
         # Labels configuration
         Label(self.frame_data, text="Pressure received").place(x=30, y=10)
@@ -91,23 +94,26 @@ class ThirdWindow:
         Label(self.frame_data, text="Timestamp last message : 10/02/2023 12:01").place(x=30, y=400)
         Label(self.frame_data, text="Pressure received : 1002 Pa").place(x=30, y=420)
         Label(self.frame_data, text="Estimated depth: 2 meters").place(x=30, y=440)
-
+        Label(self.frame_data, textvariable=self.text_pdf).place(x=110, y=510)
         self.frame_table = LabelFrame(self.frame_data, text="Coms statistics")
         self.frame_table.place(x=550, y=470)
         self.coms_table = Table(self.frame_table)
 
-        self.image_pdf = ImageTk.PhotoImage(Image.open(r"C:\Users\Innovacion\Desktop\Proyectos_Coding\GUI_comunicaciones\Imagenes\pdf_download.jpg"))
-        self.button_pdf = Button(self.frame_data, height=70, width=200, command=self.button_pdf_download,
+        self.image_pdf = ImageTk.PhotoImage(Image.open(
+            r"C:\Users\Innovacion\Desktop\Proyectos_Coding\GUI_comunicaciones\Imagenes\icono_pdf.png").resize((52, 52)))
+        self.button_pdf = Button(self.frame_data, command=self.button_pdf_download,
                                  image=self.image_pdf)
-        self.button_pdf.place(x=40, y=500)
+        self.button_pdf.place(x=40, y=490)
 
         # Threading for interactive GUI
-        self.x = threading.Thread(target=self.show_acc)
-        self.x.start()
-        self.y = threading.Thread(target=self.plot_imu)
-        self.y.start()
-        self.z = threading.Thread(target=self.plot_pressure)
-        self.z.start()
+        pub.subscribe(topicName="BlueROV2::Heading", listener=self.plot_imu)
+        self.pressure_list = []
+        pub.subscribe(topicName="BlueROV2::Pressure", listener=self.plot_pressure)
+        self.pitch_list = []
+        self.yaw_list = []
+        self.roll_list = []
+
+        pub.subscribe(topicName="BlueROV2::Angles", listener=self.show_acc)
 
     def getter(self, widget, name_widget):
         x = self.frame_data.winfo_rootx() + widget.winfo_x()
@@ -117,6 +123,7 @@ class ThirdWindow:
         ImageGrab.grab().crop((x, y, x1, y1)).save(name_widget)
 
     def button_pdf_download(self):
+
         pdf = FPDF()
         pdf.add_page()
 
@@ -138,82 +145,77 @@ class ThirdWindow:
         pdf.text(x=20, y=150, txt="Historic of pressure")
         pdf.image(r"C:\Users\Innovacion\Desktop\Proyectos_Coding\GUI_comunicaciones\pressure.png",
                   x=30, y=160, w=100, h=100)
-        #Añadir la tabla
 
-        pdf.output(os.path.dirname(os.path.abspath(__file__)) + "\Informes\Monodon_" + self.pdf_name_2 + ".pdf")
+        s = pdf.output(os.path.dirname(os.path.abspath(__file__)) + "\Informes\Monodon_" + self.pdf_name_2 + ".pdf")
 
-    def show_acc(self):
-        while True:
-            fig = Figure(figsize=(5, 5),
-                         dpi=70)
+        self.text_pdf.set("PDF saved correctly")
 
-            # random data
-            x_acc = np.random.randint(1,101,80)
-            y_acc = np.random.randint(1, 101, 80)
-            z_acc = np.random.randint(1, 101, 80)
+    def show_acc(self, acc):
 
-            # adding the subplot
-            plot1 = fig.add_subplot(111)
+        fig = Figure(figsize=(5, 5),
+                     dpi=70)
 
-            # plotting the graph
-            plot1.plot(x_acc, color="blue")
-            plot1.plot(y_acc, color="red")
-            plot1.plot(z_acc, color="yellow")
-            plot1.set_xlabel('Time (s)')
-            plot1.set_ylabel('Acceleration (g)')
+        self.roll_list.append(acc[0])
+        self.yaw_list.append(acc[1])
+        self.pitch_list.append(acc[2])
+        # adding the subplot
+        plot1 = fig.add_subplot(111)
 
-            # creating the Tkinter canvas
-            # containing the Matplotlib figure
-            self.canvas_acc = FigureCanvasTkAgg(fig, master=self.frame_data)
-            self.canvas_acc.draw()
+        # plotting the graph
+        plot1.plot(self.roll_list, color="blue")
+        plot1.plot(self.yaw_list, color="red")
+        plot1.plot(self.pitch_list, color="yellow")
+        plot1.set_xlabel('Time (s)')
+        plot1.set_ylabel('Acceleration (g)')
 
-            # placing the canvas on the Tkinter window
-            self.canvas_acc.get_tk_widget().place(x=900, y=40)
-            self.getter(self.canvas_acc.get_tk_widget(), "acc.png")
-            time.sleep(0.01)
+        # creating the Tkinter canvas
+        # containing the Matplotlib figure
+        self.canvas_acc = FigureCanvasTkAgg(fig, master=self.frame_data)
+        self.canvas_acc.draw()
 
-    def plot_imu(self):
+        # placing the canvas on the Tkinter window
+        self.canvas_acc.get_tk_widget().place(x=900, y=40)
+        self.getter(self.canvas_acc.get_tk_widget(), "acc.png")
+
+    def plot_imu(self, heading):
         if self.begin:
             self.begin = False
             self.meter3 = Meter(self.frame_data, bg="#242424", fg="#242424", radius=320, start=0, end=360,
-                           major_divisions=90, border_width=0, text_color="white",
-                           start_angle=0, end_angle=-360, scale_color="white", axis_color="cyan",
-                           needle_color="white", scroll_steps=60, minor_divisions=10, scroll=False)
-            self.meter3.set(15)
+                                major_divisions=90, border_width=0, text_color="white",
+                                start_angle=0, end_angle=-360, scale_color="white", axis_color="cyan",
+                                needle_color="white", scroll_steps=60, minor_divisions=10, scroll=False)
+            self.meter3.set(heading * 360 / 3.14)
             self.meter3.place(x=500, y=60)
         else:
             print("Calculating angle....")
-        while True:
-            self.angle = self.angle + 1
-            self.meter3.set(self.angle)
-            time.sleep(0.4)
+            self.meter3.set(heading * 360 / 3.14)
 
-    def plot_pressure(self):
-        while True:
+    def plot_pressure(self, msg):
             fig = Figure(figsize=(5, 5),
                          dpi=70)
 
             # list of squares
-            y = np.random.randint(0, 300, size=100)
+
 
             # adding the subplot
+            self.pressure_list.append(msg)
             plot1 = fig.add_subplot(111)
 
             # plotting the graph
-            plot1.plot(y)
+            plot1.plot(self.pressure_list)
             plot1.set_xlabel('Time (s)')
             plot1.set_ylabel('Pressure (Pa)')
 
             # creating the Tkinter canvas
             # containing the Matplotlib figure
             self.canvas_press = FigureCanvasTkAgg(fig,
-                                       master=self.frame_data)
+                                                  master=self.frame_data)
             self.canvas_press.draw()
 
             # placing the canvas on the Tkinter window
             self.canvas_press.get_tk_widget().place(x=40, y=40)
             self.getter(self.canvas_press.get_tk_widget(), "pressure.png")
-            time.sleep(0.4)
+
 
 
 class SecondWindow:
@@ -241,9 +243,19 @@ class SecondWindow:
         progressbar = ttk.Progressbar(self.frameROVs)
         progressbar.place(x=400, y=200, width=200)
 
+def receive():
+    print("inside")
+    Receiver()
+
+def window():
+    MainWindow()
 
 def main():
-    MainWindow()
+
+    x = threading.Thread(target=receive)
+    x.start()
+    y = threading.Thread(target=window)
+    y.start()
 
 
 if __name__ == "__main__":
