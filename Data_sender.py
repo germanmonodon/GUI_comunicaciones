@@ -1,9 +1,8 @@
-from time import perf_counter
 from pymavlink import mavutil
 from pubsub import pub
 
 
-class Receiver():
+class Sender:
     def __init__(self):
 
         self.master = mavutil.mavlink_connection('udpin:0.0.0.0:14550')
@@ -28,6 +27,7 @@ class Receiver():
     def handle_imu_message(self, msg):
         xacc, yacc, zacc = msg.xacc, msg.yacc, msg.zacc
         print('SCALED_IMU2', xacc, yacc, zacc)
+
     def handle_pressure(self, msg):
         # print(msg.press_abs)
         pub.sendMessage(topicName="BlueROV2::Pressure", msg=msg.press_abs)

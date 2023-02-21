@@ -7,14 +7,11 @@ from tkdial import Meter
 from fpdf import FPDF
 from PIL import ImageGrab
 from pubsub import pub
-from auxiliar import Receiver
+from Data_sender import Sender
 
-import time
 import threading
-import numpy as np
 import os
 import datetime
-
 
 
 class MainWindow:
@@ -151,9 +148,11 @@ class ThirdWindow:
         pdf.image(r"C:\Users\Innovacion\Desktop\Proyectos_Coding\GUI_comunicaciones\pressure.png",
                   x=30, y=160, w=100, h=100)
 
-        s = pdf.output(os.path.dirname(os.path.abspath(__file__)) + "\Informes\Monodon_" + self.pdf_name_2 + ".pdf")
+        s = pdf.output(os.path.dirname(os.getcwd()) + "\GUI_comunicaciones\Informes\Monodon_" + self.pdf_name_2 + ".pdf")
 
         self.text_pdf.set("PDF saved correctly")
+        os.remove("acc.png")
+        os.remove("pressure.png")
 
     def show_acc(self, acc):
 
@@ -174,8 +173,6 @@ class ThirdWindow:
         plot1.set_xlabel('Time (s)')
         plot1.set_ylabel('Acceleration (g)')
 
-        # creating the Tkinter canvas
-        # containing the Matplotlib figure
         self.canvas_acc = FigureCanvasTkAgg(fig, master=self.frame_data)
         self.canvas_acc.draw()
 
@@ -197,30 +194,25 @@ class ThirdWindow:
             self.meter3.set(heading * 360 / 3.14)
 
     def plot_pressure(self, msg):
-            fig = Figure(figsize=(5, 5),
-                         dpi=70)
+        fig = Figure(figsize=(5, 5),
+                     dpi=70)
 
-            self.text_pressure_received.set("Presure received: " + str("{:.2f}".format(msg)) + " Pa")
-            self.text_timestamp2.set("Timestamp last message " + str(datetime.datetime.now()).split(".")[0])
-            # adding the subplot
-            self.pressure_list.append(msg)
-            plot1 = fig.add_subplot(111)
+        self.text_pressure_received.set("Presure received: " + str("{:.2f}".format(msg)) + " Pa")
+        self.text_timestamp2.set("Timestamp last message " + str(datetime.datetime.now()).split(".")[0])
+        self.pressure_list.append(msg)
+        plot1 = fig.add_subplot(111)
 
-            # plotting the graph
-            plot1.plot(self.pressure_list)
-            plot1.set_xlabel('Time (s)')
-            plot1.set_ylabel('Pressure (Pa)')
+        # plotting the graph
+        plot1.plot(self.pressure_list)
+        plot1.set_xlabel('Time (s)')
+        plot1.set_ylabel('Pressure (Pa)')
 
-            # creating the Tkinter canvas
-            # containing the Matplotlib figure
-            self.canvas_press = FigureCanvasTkAgg(fig,
-                                                  master=self.frame_data)
-            self.canvas_press.draw()
+        self.canvas_press = FigureCanvasTkAgg(fig,
+                                              master=self.frame_data)
+        self.canvas_press.draw()
 
-            # placing the canvas on the Tkinter window
-            self.canvas_press.get_tk_widget().place(x=40, y=40)
-            self.getter(self.canvas_press.get_tk_widget(), "pressure.png")
-
+        self.canvas_press.get_tk_widget().place(x=40, y=40)
+        self.getter(self.canvas_press.get_tk_widget(), "pressure.png")
 
 
 class SecondWindow:
@@ -248,12 +240,14 @@ class SecondWindow:
         progressbar = ttk.Progressbar(self.frameROVs)
         progressbar.place(x=400, y=200, width=200)
 
+
 def receive():
-    print("inside")
-    Receiver()
+    Sender()
+
 
 def window():
     MainWindow()
+
 
 def main():
 
