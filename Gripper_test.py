@@ -6,6 +6,9 @@ Requires Python 3.
 
 """
 
+"""
+Enciende las luces del ROV de la Universidad, buscar info de otros servos y el número.
+"""
 # Import mavutil
 from pymavlink import mavutil
 

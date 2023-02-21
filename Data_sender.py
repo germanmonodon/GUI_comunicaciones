@@ -4,8 +4,12 @@ from pubsub import pub
 
 class Sender:
     def __init__(self):
-
-        self.master = mavutil.mavlink_connection('udpin:0.0.0.0:14550')
+        """
+          Cambiar el puerto, este puerto es solo si hay conexión simultanea con QGroundControl y con este programa
+          Puerto sin QgroundControl: udpin:0.0.0.0:14550
+          Falta por configurar el puerto con QgroundControl
+        """
+        self.master = mavutil.mavlink_connection('udpin:0.0.0.0:513')
         # message_types = {'ATTITUDE', 'SCALED_IMU2', 'AHRS2', 'SCALED_PRESSURE'}
         message_types = {'SCALED_PRESSURE', 'ATTITUDE', 'SCALED_IMU2'}
         self.message_handlers = {
