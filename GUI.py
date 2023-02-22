@@ -75,7 +75,8 @@ class ThirdWindow:
         self.text_number_samples = StringVar()
         self.text_timestamp = StringVar()
         self.text_timestamp2 = StringVar()
-
+        self.text_acc_data = StringVar()
+        self.text_gyro_data = StringVar()
         self.text_pdf.set("Save Report!")
 
         # Principal Frame configuration
@@ -91,8 +92,8 @@ class ThirdWindow:
         Label(self.frame_data, textvariable=self.text_number_samples).place(x=900, y=400)
         Label(self.frame_data, text="Orientation ROV2").place(x=500, y=10)
         Label(self.frame_data, textvariable=self.text_timestamp).place(x=500, y=400)
-        Label(self.frame_data, text="Acc data: ").place(x=500, y=420)
-        Label(self.frame_data, text="Gyro data:").place(x=500, y=440)
+        Label(self.frame_data, textvariable=self.text_acc_data).place(x=500, y=420)
+        Label(self.frame_data, textvariable=self.text_gyro_data).place(x=500, y=440)
         Label(self.frame_data, textvariable=self.text_timestamp2).place(x=30, y=400)
         Label(self.frame_data, textvariable=self.text_pressure_received).place(x=30, y=420)
         Label(self.frame_data, text="Estimated depth: 2 meters").place(x=30, y=440)
@@ -111,11 +112,16 @@ class ThirdWindow:
         pub.subscribe(topicName="BlueROV2::Heading", listener=self.plot_imu)
         self.pressure_list = []
         pub.subscribe(topicName="BlueROV2::Pressure", listener=self.plot_pressure)
+        pub.subscribe(topicName="BlueROV2::AccyGyro", listener=self.acc_gyro)
         self.pitch_list = []
         self.yaw_list = []
         self.roll_list = []
 
         pub.subscribe(topicName="BlueROV2::Angles", listener=self.show_acc)
+
+    def acc_gyro(self, acc):
+        self.text_acc_data.set("Acc data: " + "acc_x: " + str(acc[0][0]) + " acc_y: " + str(acc[0][1]) + " acc_x: " + str(acc[0][2]) + " mG")
+        self.text_gyro_data.set("Gyro data: " + "gyro_x: " + str(acc[1][0]) + " gyro_y: " + str(acc[1][1]) + " gyro_x: " + str(acc[1][2]) + " mrad/s")
 
     def getter(self, widget, name_widget):
         x = self.frame_data.winfo_rootx() + widget.winfo_x()
@@ -187,11 +193,10 @@ class ThirdWindow:
                                 major_divisions=90, border_width=0, text_color="white",
                                 start_angle=0, end_angle=-360, scale_color="white", axis_color="cyan",
                                 needle_color="white", scroll_steps=60, minor_divisions=10, scroll=False)
-            self.meter3.set(heading * 360 / 3.14)
+            self.meter3.set(heading-90)
             self.meter3.place(x=500, y=60)
         else:
-            print("Calculating angle....")
-            self.meter3.set(heading * 360 / 3.14)
+            self.meter3.set(heading-90)
 
     def plot_pressure(self, msg):
         fig = Figure(figsize=(5, 5),
